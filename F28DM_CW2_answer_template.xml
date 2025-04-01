@@ -15,44 +15,67 @@
 <!--START OF YOUR ANSWERS and SQL STATEMENTS-->
 
     <question id="1">
-        <answer></answer>
+        <answer>The Lodger (1898)</answer>
         <sql>
-  
+            SELECT title 
+            FROM imdb.movies 
+            WHERE year = (SELECT MIN(year) FROM imdb.movies);
         </sql>
     </question>
 
     <question id="2">
-        <answer></answer>
+        <answer>2</answer>
         <sql>
-       
+       SELECT COUNT(movieid) 
+       FROM (SELECT movieid, COUNT(directorid) AS director_count 
+       FROM imdb.movies2directors 
+       GROUP BY movieid 
+       HAVING COUNT(directorid) > 7) AS subquery;
+
         </sql>
     </question>
 
     <question id="3">
-        <answer></answer>
+        <answer>1940</answer>
         <sql>
-       
+       SELECT m.year 
+       FROM imdb.movies m
+       JOIN imdb.movies2directors md ON m.movieid = md.movieid
+       GROUP BY m.movieid, m.year
+       ORDER BY COUNT(md.directorid) DESC
+       LIMIT 1;
         </sql>
     </question>
 
     <question id="4">
-        <answer></answer>
+        <answer>2500324</answer>
         <sql>
-       
+        
         </sql>
     </question>
 
     <question id="5">
-        <answer></answer>
+        <answer>3</answer>
         <sql>
-       
+      SELECT COUNT(*) 
+      FROM (SELECT m2a1.actorid AS actor1, m2a2.actorid AS actor2, COUNT(*) AS films_together
+      FROM imdb.movies2actors m2a1
+      JOIN imdb.movies2actors m2a2 ON m2a1.movieid = m2a2.movieid
+      WHERE m2a1.actorid < m2a2.actorid
+      GROUP BY m2a1.actorid, m2a2.actorid
+      HAVING COUNT(*) > 10) AS subquery;
         </sql>
     </question>
 
     <question id="6">
-        <answer></answer>
+        <answer>1930</answer>
         <sql>
-       
+        SELECT (year / 10) * 10 AS decade
+        FROM imdb.movies m
+        JOIN imdb.ratings r ON m.movieid = r.movieid
+        GROUP BY decade
+        ORDER BY AVG(CAST(r.rank AS double precision)) DESC
+        LIMIT 1;
         </sql>
     </question>
 
