@@ -143,9 +143,21 @@
     </question>
 
     <question id="16">
-        <answer></answer>
+        <answer>8</answer>
         <sql>
-       
+        WITH quake_periods AS (
+        SELECT 
+        DATE_TRUNC('hour', '2010-01-01 00:00:00'::timestamp + 
+        INTERVAL '48 hours' * FLOOR(EXTRACT(EPOCH FROM (datetime - '2010-01-01 00:00:00'::timestamp)) / (48 * 3600))) 
+        AS period_start,
+        COUNT(*) AS quake_count
+        FROM quakes.scotquakes
+        GROUP BY period_start
+        )
+        SELECT period_start AS start_time, quake_count
+        FROM quake_periods
+        ORDER BY quake_count DESC
+        LIMIT 1;
         </sql>
     </question>
 
@@ -185,17 +197,31 @@
     </question>
 
     <question id="22">
-        <answer></answer>
+        <answer>08</answer>
         <sql>
-       
+            SELECT 
+            EXTRACT(MONTH FROM date_taken) AS month, 
+            COUNT(*) AS photo_count
+            FROM flickr.flickr_edin
+            GROUP BY month
+            ORDER BY photo_count DESC
+            LIMIT 1;  
         </sql>
     </question>
 
 
     <question id="23">
-        <answer></answer>
+        <answer>19473027@N00</answer>
         <sql>
-       
+            SELECT 
+            f.userid, 
+            COUNT(DISTINCT g.id) AS unique_locations
+            FROM flickr.flickr_edin f
+            JOIN flickr.grid100m g 
+            ON ST_Intersects(f.geom, g.geom)
+            GROUP BY f.userid
+            ORDER BY unique_locations DESC
+            LIMIT 1;
         </sql>
     </question>
 
