@@ -107,16 +107,29 @@
     </question>
 
     <question id="11">
-        <answer></answer>
+        <answer>74</answer>
         <sql>
-       
+       SELECT COUNT(*) AS num_locations_within_5km
+       FROM scenicornot.locations
+       WHERE ST_DWithin(
+       geom_bng,
+       ST_SetSRID(ST_MakePoint(530000, 180000), 27700),
+       5000
+       );
         </sql>
     </question>
 
     <question id="12">
-        <answer></answer>
+        <answer>616</answer>
         <sql>
-       
+       SELECT h.cell_id, AVG(l.average) AS avg_score, COUNT(*) AS location_count
+       FROM scenicornot.hexgrid10km h
+       JOIN scenicornot.locations l
+       ON ST_Contains(h.geom, l.geom_bng)
+       GROUP BY h.cell_id
+       HAVING COUNT(*) >= 3
+       ORDER BY avg_score DESC
+       LIMIT 1;
         </sql>
     </question>
 
@@ -128,9 +141,29 @@
     </question>
 
     <question id="14">
-        <answer></answer>
+        <answer>1618, 1688</answer>
         <sql>
-       
+       WITH avg_scores AS (
+       SELECT h.cell_id, AVG(l.average) AS avg_score
+       FROM scenicornot.hexgrid10km h
+       JOIN scenicornot.locations l ON ST_Contains(h.geom, l.geom_bng)
+       GROUP BY h.cell_id
+       ),
+       neighbour_pairs AS (
+       SELECT a.cell_id AS cell_a, b.cell_id AS cell_b,
+       ABS(a.avg_score - b.avg_score) AS score_diff
+       FROM avg_scores a
+       JOIN avg_scores b
+       ON a.cell_id < b.cell_id
+       AND ST_Touches(
+       (SELECT geom FROM scenicornot.hexgrid10km WHERE cell_id = a.cell_id),
+       (SELECT geom FROM scenicornot.hexgrid10km WHERE cell_id = b.cell_id)
+       )
+       )
+       SELECT cell_a, cell_b
+       FROM neighbour_pairs
+       ORDER BY score_diff DESC
+       LIMIT 1;
         </sql>
     </question>
 
@@ -182,16 +215,22 @@
     </question>
 
     <question id="18">
-        <answer></answer>
+        <answer>1.17</answer>
         <sql>
-       
+       SELECT AVG(spd) AS average_speed
+       FROM trajectory.tracking
+       WHERE userid = 'p3';
         </sql>
     </question>
 
     <question id="19">
-        <answer></answer>
+        <answer>p1</answer>
         <sql>
-       
+       SELECT userid, routeid, COUNT(*) AS num_points
+       FROM trajectory.tracking
+       GROUP BY userid, routeid
+       ORDER BY num_points DESC
+       LIMIT 1;
         </sql>
     </question>
 
