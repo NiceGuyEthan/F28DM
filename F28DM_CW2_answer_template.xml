@@ -31,7 +31,6 @@
        FROM imdb.movies2directors 
        GROUP BY movieid 
        HAVING COUNT(directorid) > 7) AS subquery;
-
         </sql>
     </question>
 
@@ -136,13 +135,6 @@
     </question>
 
     <question id="15">
-        <answer></answer>
-        <sql>
-       
-        </sql>
-    </question>
-
-    <question id="16">
         <answer>8</answer>
         <sql>
         WITH quake_periods AS (
@@ -157,14 +149,35 @@
         SELECT period_start AS start_time, quake_count
         FROM quake_periods
         ORDER BY quake_count DESC
-        LIMIT 1;
+        LIMIT 1; 
+        </sql>
+    </question>
+
+    <question id="16">
+        <answer>10</answer>
+        <sql>
+            SELECT COUNT(DISTINCT s.fid) AS unique_scenicornot_locations
+            FROM scenicornot.locations s
+            JOIN quakes.scotquakes q
+            ON ST_DWithin(
+            s.geom_bng,
+            ST_Transform(q.geom, 27700),
+            100  
+            ); 
         </sql>
     </question>
 
     <question id="17">
-        <answer></answer>
+        <answer>33</answer>
         <sql>
-       
+            WITH clusters AS (
+            SELECT 
+            ST_ClusterDBSCAN(geom, eps := 15000, minpoints := 5) OVER () AS cluster_id
+            FROM quakes.scotquakes
+            )
+            SELECT COUNT(DISTINCT cluster_id) AS num_clusters
+            FROM clusters
+            WHERE cluster_id IS NOT NULL AND cluster_id != -1;
         </sql>
     </question>
 
