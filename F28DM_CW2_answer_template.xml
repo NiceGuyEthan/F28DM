@@ -134,9 +134,15 @@
     </question>
 
     <question id="13">
-        <answer></answer>
-        <sql>
-       
+        <answer>2222</answer>
+        <sql>SELECT h.cell_id,
+       SUM(array_length(string_to_array(l.votes, ','), 1)) AS total_votes
+       FROM scenicornot.hexgrid10km h
+       JOIN scenicornot.locations l
+       ON ST_Contains(h.geom, l.geom_bng)
+       GROUP BY h.cell_id
+       ORDER BY total_votes DESC
+       LIMIT 1;       
         </sql>
     </question>
 
