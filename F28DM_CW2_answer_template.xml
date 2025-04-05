@@ -17,34 +17,35 @@
     <question id="1">
         <answer>The Lodger (1898)</answer>
         <sql>
-            SELECT title 
-            FROM imdb.movies 
-            WHERE year = (SELECT MIN(year) FROM imdb.movies);
+           SELECT title
+           FROM imdb.movies
+           ORDER BY year ASC
+           LIMIT 1;
         </sql>
     </question>
 
     <question id="2">
         <answer>2</answer>
         <sql>
-    SELECT COUNT(*) AS num_movies
-    FROM (
-    SELECT movieid
-    FROM imdb.movies2directors
-    GROUP BY movieid
-    HAVING COUNT(directorid) > 7
-    ) AS sub;
+            SELECT COUNT(DISTINCT movieid)
+            FROM imdb.movies2directors
+            GROUP BY movieid
+            HAVING COUNT(directorid) > 7;
         </sql>
     </question>
 
     <question id="3">
         <answer>1940</answer>
         <sql>
-       SELECT m.year 
-       FROM imdb.movies m
-       JOIN imdb.movies2directors md ON m.movieid = md.movieid
-       GROUP BY m.movieid, m.year
-       ORDER BY COUNT(md.directorid) DESC
-       LIMIT 1;
+            SELECT year
+            FROM imdb.movies
+            WHERE movieid = (
+            SELECT movieid
+            FROM imdb.movies2directors
+            GROUP BY movieid
+            ORDER BY COUNT(directorid) DESC
+            LIMIT 1
+            );
         </sql>
     </question>
 
@@ -100,33 +101,44 @@
     </question>
 
     <question id="7">
-        <answer>32</answer>
+        <answer>14</answer>
         <sql>
-       SELECT COUNT(DISTINCT m.movieid)
-       FROM imdb.movies m
-       LEFT JOIN imdb.movies2directors md ON m.movieid = md.movieid
-       WHERE md.genre IS NULL OR TRIM(md.genre) = '';
+            SELECT COUNT(DISTINCT movieid)
+       FROM imdb.movies2directors
+       WHERE genre IS NULL;
         </sql>
     </question>
 
     <question id="8">
         <answer></answer>
         <sql>
-       
+  
         </sql>
     </question>
 
     <question id="9">
-        <answer></answer>
+        <answer> 154945</answer>
         <sql>
-       
+       SELECT directorid
+       FROM imdb.movies2directors md
+       JOIN imdb.runningtimes rt ON md.movieid = rt.movieid
+       WHERE rt.time1 > 160
+       GROUP BY directorid
+       ORDER BY COUNT(md.movieid) DESC
+       LIMIT 1;
         </sql>
     </question>
 
     <question id="10">
-        <answer></answer>
+        <answer>154945</answer>
         <sql>
-       
+       SELECT m2d.directorid
+       FROM imdb.movies2directors m2d
+       JOIN imdb.runningtimes rt ON m2d.movieid = rt.movieid
+       WHERE rt.time1 > 160
+       GROUP BY m2d.directorid
+       ORDER BY COUNT(m2d.movieid) DESC
+       LIMIT 1;
         </sql>
     </question>
 
