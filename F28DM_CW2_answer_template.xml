@@ -26,11 +26,13 @@
     <question id="2">
         <answer>2</answer>
         <sql>
-       SELECT COUNT(movieid) 
-       FROM (SELECT movieid, COUNT(directorid) AS director_count 
-       FROM imdb.movies2directors 
-       GROUP BY movieid 
-       HAVING COUNT(directorid) > 7) AS subquery;
+    SELECT COUNT(*) AS num_movies
+    FROM (
+    SELECT movieid
+    FROM imdb.movies2directors
+    GROUP BY movieid
+    HAVING COUNT(directorid) > 7
+    ) AS sub;
         </sql>
     </question>
 
@@ -49,20 +51,39 @@
     <question id="4">
         <answer>2500324</answer>
         <sql>
-        
+        SELECT actorid
+        FROM imdb.movies2actors
+        WHERE movieid IN (
+        SELECT movieid
+        FROM imdb.movies2actors
+        WHERE actorid = (
+        SELECT actorid
+        FROM imdb.actors
+        WHERE name = 'Hanks, Tom'
+        )
+        )
+        AND actorid != (
+        SELECT actorid
+        FROM imdb.actors
+        WHERE name = 'Hanks, Tom'
+        )
+        GROUP BY actorid
+        ORDER BY SUM(1) DESC
+        LIMIT 1;
         </sql>
     </question>
 
     <question id="5">
         <answer>3</answer>
         <sql>
-      SELECT COUNT(*) 
+      <![CDATA[ SELECT COUNT(*) 
       FROM (SELECT m2a1.actorid AS actor1, m2a2.actorid AS actor2, COUNT(*) AS films_together
       FROM imdb.movies2actors m2a1
       JOIN imdb.movies2actors m2a2 ON m2a1.movieid = m2a2.movieid
       WHERE m2a1.actorid < m2a2.actorid
       GROUP BY m2a1.actorid, m2a2.actorid
       HAVING COUNT(*) > 10) AS subquery;
+            ]]>
         </sql>
     </question>
 
@@ -79,9 +100,12 @@
     </question>
 
     <question id="7">
-        <answer></answer>
+        <answer>32</answer>
         <sql>
-       
+       SELECT COUNT(DISTINCT m.movieid)
+       FROM imdb.movies m
+       LEFT JOIN imdb.movies2directors md ON m.movieid = md.movieid
+       WHERE md.genre IS NULL OR TRIM(md.genre) = '';
         </sql>
     </question>
 
@@ -149,7 +173,7 @@
     <question id="14">
         <answer>1618, 1688</answer>
         <sql>
-       WITH avg_scores AS (
+       <![CDATA[ WITH avg_scores AS (
        SELECT h.cell_id, AVG(l.average) AS avg_score
        FROM scenicornot.hexgrid10km h
        JOIN scenicornot.locations l ON ST_Contains(h.geom, l.geom_bng)
@@ -170,6 +194,7 @@
        FROM neighbour_pairs
        ORDER BY score_diff DESC
        LIMIT 1;
+            ]]>
         </sql>
     </question>
 
@@ -241,16 +266,37 @@
     </question>
 
     <question id="20">
-        <answer></answer>
-        <sql>
-       
+        <answer>p3</answer>
+        <sql> 
+         SELECT 
+         userid,
+         ST_Length(ST_MakeLine(geom ORDER BY datetime)::geography) / 
+         NULLIF(
+         ST_Distance(
+         ST_MakePoint(MIN(lng), MIN(lat))::geography,
+         ST_MakePoint(MAX(lng), MAX(lat))::geography
+         ), 0
+         ) AS sinuosity_ratio
+         FROM trajectory.tracking
+         GROUP BY userid
+         ORDER BY sinuosity_ratio DESC
+         LIMIT 1;
         </sql>
     </question>
 
     <question id="21">
-        <answer></answer>
+        <answer>1151.19</answer>
         <sql>
-       
+       SELECT SUM(ST_Distance(prev_geom::geography, geom::geography)) AS total_distance_meters
+       FROM (
+       SELECT 
+       userid, 
+       geom,
+       LAG(geom) OVER (PARTITION BY userid ORDER BY datetime) AS prev_geom
+       FROM trajectory.tracking
+       WHERE userid = 'p1'
+       ) AS ordered_points
+       WHERE prev_geom IS NOT NULL;
         </sql>
     </question>
 
@@ -286,14 +332,32 @@
     <question id="24">
         <answer></answer>
         <sql>
-       
+       SELECT osm_name, COUNT(DISTINCT osm_id) AS osm_id_count
+       FROM accident.network
+       WHERE osm_name ILIKE '%avenue%' 
+       GROUP BY osm_name
+       HAVING COUNT(DISTINCT osm_id) > 1;
         </sql>
     </question>
 
     <question id="25">
-        <answer></answer>
+        <answer>b</answer>
         <sql>
-       
+       SELECT route,
+       COUNT(e.id) / SUM(n.km) AS crashes_per_km
+       FROM
+       (SELECT 'a' AS route, geom FROM accident.route_a
+       UNION ALL
+       SELECT 'b' AS route, geom FROM accident.route_b
+       UNION ALL
+       SELECT 'c' AS route, geom FROM accident.route_c) r
+       JOIN accident.edincrash e
+       ON ST_DWithin(r.geom, e.geom, 15)  -- Check within 15 meters
+       JOIN accident.network n
+       ON ST_DWithin(r.geom, n.geom, 15)  -- Same distance check for the network
+       GROUP BY route
+       ORDER BY crashes_per_km DESC
+       LIMIT 1;
         </sql>
     </question>
 
@@ -301,3 +365,5 @@
 <!--END OF ANSWERS -->
 
 </data>
+
+
